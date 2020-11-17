@@ -8775,6 +8775,16 @@ string CompilerGLSL::access_chain_internal(uint32_t base, const uint32_t *indice
 				append_index(index, is_literal);
 			}
 
+			// UE Change Begin: Append vector swizzle if physical type is a vector but the logical type was a scalar.
+			// This happens with arrays of scalars within constant buffer packing rules.
+			if (physical_type != 0 && type->self != (ID)physical_type && type->vecsize == 1 &&
+			    get<SPIRType>(physical_type).vecsize > 1)
+			{
+				expr += ".x";
+			}
+			// UE Change End: Append vector swizzle if physical type is a vector but the logical type was a scalar.
+			// This happens with arrays of scalars within constant buffer packing rules.
+
 			type_id = type->parent_type;
 			type = &get<SPIRType>(type_id);
 
