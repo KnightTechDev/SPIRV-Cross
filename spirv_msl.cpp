@@ -4949,6 +4949,18 @@ void CompilerMSL::emit_custom_functions()
 			break;
 		}
 
+		// UE Change Begin: Clamp access to SSBOs to the size of the buffer
+		// Storage buffer robustness
+		case SPVFuncImplStorageBufferCoords:
+		{
+			statement("// Returns buffer coords clamped to storage buffer size");
+			statement("#define spvStorageBufferCoords(idx, sizes, type, coord) metal::min((coord), (sizes[(idx)*2] / "
+			          "sizeof(type)) - 1)");
+			statement("");
+			break;
+		}
+		// UE Change End: Clamp access to SSBOs to the size of the buffer
+
 		// "fadd" intrinsic support
 		case SPVFuncImplFAdd:
 			statement("template<typename T>");
@@ -7896,6 +7908,29 @@ void CompilerMSL::emit_instruction(const Instruction &instruction)
 			{
 				coord = join("spvImage2DAtomicCoord(", coord, ", ", to_expression(ops[2]), ")");
 			}
+
+			// UE Change Begin: Clamp access to SSBOs to the size of the buffer
+			if (msl_options.enforce_storge_buffer_bounds)
+			{
+				const auto *var_type = var ? maybe_get<SPIRType>(var->basetype) : nullptr;
+				uint32_t var_index = get_metal_resource_index(*var, var_type->basetype);
+				const auto &innertype =
+				    var_type->basetype == SPIRType::Image ? get<SPIRType>(var_type->image.type) : *var_type;
+				uint32_t desc_set = get_decoration(ops[2], DecorationDescriptorSet);
+				if (descriptor_set_is_argument_buffer(desc_set))
+				{
+					coord = join("spvStorageBufferCoords(", convert_to_string(var_index), ", ",
+					             to_name(argument_buffer_ids[desc_set]), ".spvBufferSizeConstants, ",
+					             type_to_glsl(innertype), ", ", coord, ")");
+				}
+				else
+				{
+					coord = join("spvStorageBufferCoords(", convert_to_string(var_index), ", spvBufferSizeConstants, ",
+					             type_to_glsl(innertype), ", ", coord, ")");
+				}
+				add_spv_func_and_recompile(SPVFuncImplStorageBufferCoords);
+			}
+			// UE Change Begin: Clamp access to SSBOs to the size of the buffer
 
 			auto &e = set<SPIRExpression>(id, join(to_expression(ops[2]), "_atomic[", coord, "]"), result_type, true);
 			e.loaded_from = var ? var->self : ID(0);
@@ -15218,9 +15253,20 @@ CompilerMSL::SPVFuncImpl CompilerMSL::OpCodePreprocessor::get_spv_func_impl(Op o
 		auto it = image_pointers.find(args[opcode == OpAtomicStore ? 0 : 2]);
 		if (it != image_pointers.end())
 		{
+			// UE Change Begin: Clamp access to SSBOs to the size of the buffer
+			if (compiler.msl_options.enforce_storge_buffer_bounds)
+			{
+				compiler.buffers_requiring_array_length.insert(args[opcode == OpAtomicStore ? 0 : 2]);
+			}
+			// UE Change End: Clamp access to SSBOs to the size of the buffer
+
 			uint32_t tid = compiler.get<SPIRVariable>(it->second).basetype;
 			if (tid && compiler.get<SPIRType>(tid).image.dim == Dim2D)
 				return SPVFuncImplImage2DAtomicCoords;
+
+			// UE Change Begin: Clamp access to SSBOs to the size of the buffer
+			return SPVFuncImplStorageBufferCoords;
+			// UE Change End: Clamp access to SSBOs to the size of the buffer
 		}
 		break;
 	}
@@ -15342,6 +15388,27 @@ CompilerMSL::SPVFuncImpl CompilerMSL::OpCodePreprocessor::get_spv_func_impl(Op o
 
 	case OpGroupNonUniformQuadSwap:
 		return SPVFuncImplQuadSwap;
+
+	// UE Change Begin: Clamp access to SSBOs to the size of the buffer
+	case OpInBoundsAccessChain:
+	case OpAccessChain:
+	case OpPtrAccessChain:
+		if (compiler.msl_options.enforce_storge_buffer_bounds)
+		{
+			if (auto *var = compiler.maybe_get<SPIRVariable>(args[2]))
+			{
+				auto &type = compiler.get<SPIRType>(var->basetype);
+				bool ssbo = compiler.has_decoration(type.self, DecorationBufferBlock);
+				if ((var->storage == StorageClassStorageBuffer ||
+				     (type.basetype == SPIRType::Struct && var->storage == StorageClassUniform && ssbo)))
+				{
+					compiler.buffers_requiring_array_length.insert(var->self);
+					return SPVFuncImplStorageBufferCoords;
+				}
+			}
+		}
+		break;
+	// UE Change End: Clamp access to SSBOs to the size of the buffer
 
 	default:
 		break;
