@@ -420,6 +420,10 @@ public:
 		bool enforce_storge_buffer_bounds = false;
 		// UE Change End: Clamp access to SSBOs to the size of the buffer
 
+		// UE Change Begin: Allow the caller to specify an offset for argument buffer binding slots
+		uint32_t argument_buffer_offset = 0;
+		// UE Change End: Allow the caller to specify an offset for argument buffer binding slots
+
 		enum class IndexType
 		{
 			None = 0,

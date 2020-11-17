@@ -11712,6 +11712,10 @@ string CompilerMSL::entry_point_args_argument_buffer(bool append_comma)
 				buffer_binding = i;
 		}
 
+		// UE Change Begin: Allow the caller to specify an offset for argument buffer binding slots
+		buffer_binding += msl_options.argument_buffer_offset;
+		// UE Change End: Allow the caller to specify an offset for argument buffer binding slots
+
 		claimed_bindings.set(buffer_binding);
 
 		ep_args += get_argument_address_space(var) + " " + type_to_glsl(type) + "& " + to_restrict(id) + to_name(id);
