@@ -3489,7 +3489,7 @@ uint32_t CompilerMSL::add_interface_block(StorageClass storage, bool patch)
 					#else
 					statement("if (", to_expression(builtin_invocation_id_id), " < ", get_entry_point().output_vertices,
 					          ")");
-					statement("{");
+					begin_scope();
 					#endif
 					// UE Change End: Early return from tessellation-control shader will skip a threadgroup barrier.
 				}
@@ -8573,9 +8573,9 @@ void CompilerMSL::emit_barrier(uint32_t id_exe_scope, uint32_t id_mem_scope, uin
 	exe_scope = min(exe_scope, mem_scope);
 
 	// UE Change Begin: Early return from tessellation-control shader will skip a threadgroup barrier.
-	if (get_execution_model() == ExecutionModelTessellationControl)
+	if (get_execution_model() == ExecutionModelTessellationControl && !msl_options.multi_patch_workgroup)
 	{
-		statement("} /* if (gl_InvocationID < vertices) */");
+		end_scope(); // endif (gl_InvocationID < OutputVertices)
 	}
 	// UE Change End: Early return from tessellation-control shader will skip a threadgroup barrier.
 
