@@ -11919,8 +11919,49 @@ void CompilerMSL::entry_point_args_discrete_descriptors(string &ep_args)
 			{
 				if (msl_options.is_macos() && !msl_options.supports_msl_version(2, 3))
 					SPIRV_CROSS_THROW("Framebuffer fetch on Mac is not supported before MSL 2.3.");
+
+				// UE Change Begin: Use subpass input dimension specified by user options.
+				// Determine dimension of subpass input attachment.
+				// This can't be stored in SPIR-V, so we need to pass this information via compiler options.
+				uint32_t subpass_dim = 4;
+
+				auto dim_iter = msl_options.subpass_input_dimensions.find(r.index);
+				if (dim_iter != msl_options.subpass_input_dimensions.end())
+				{
+					subpass_dim = static_cast<uint32_t>(dim_iter->second);
+					if (subpass_dim < 1 || subpass_dim > 4)
+					{
+						SPIRV_CROSS_THROW("Subpass input dimension must be in range [1, 4] but " +
+						                  std::to_string(subpass_dim) + " was specified");
+					}
+				}
+
+				// Change vector size of subpass expression
+				auto &img_type = get<SPIRType>(type.self).image;
+				auto &subpass_type = get<SPIRType>(img_type.type);
+
+				// Generate new type and assign it to variable
+				uint32_t new_type_id = ir.increase_bound_by(1);
+				SPIRType new_type = subpass_type;
+				{
+					new_type.vecsize = subpass_dim;
+
+					// Ensure new type has a parent type if we generated a vector
+					if (subpass_type.vecsize == 1 && subpass_dim != 1)
+						new_type.parent_type = subpass_type.self;
+				}
+				set<SPIRType>(new_type_id, new_type);
+
+				// Replace image type with new tpye
+				img_type.type = new_type_id;
+
+				// Use [[color(N)]] as input for fragment shader to utilize native subpass fetch operations
 				ep_args += image_type_glsl(type, var_id) + " " + r.name;
-				ep_args += " [[color(" + convert_to_string(r.index) + ")]]";
+
+				// Use input attachment index instead of resource index for N in [[color(N)]]
+				uint32_t input_attachment_index = get_decoration(var_id, DecorationInputAttachmentIndex);
+				ep_args += " [[color(" + convert_to_string(input_attachment_index) + ")]]";
+				// UE Change End: Use subpass input dimension specified by user options.
 			}
 
 			// Emulate texture2D atomic operations

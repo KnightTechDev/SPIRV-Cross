@@ -424,6 +424,13 @@ public:
 		uint32_t argument_buffer_offset = 0;
 		// UE Change End: Allow the caller to specify an offset for argument buffer binding slots
 
+		// UE Change Begin: Use subpass input dimension specified by user options.
+		// Adds a specific dimension in the range [1, 4] to a subpass input attachment that will be other than a 4D vector.
+		// The base type will remain, i.e. the default is float4 or half4.
+		// Key: binding, Value: Dimension.
+		std::map<uint32_t, int> subpass_input_dimensions;
+		// UE Change End: Use subpass input dimension specified by user options.
+
 		enum class IndexType
 		{
 			None = 0,
