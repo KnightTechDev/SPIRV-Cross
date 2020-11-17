@@ -3481,9 +3481,17 @@ uint32_t CompilerMSL::add_interface_block(StorageClass storage, bool patch)
 					statement("    ", input_wg_var_name, "[", to_expression(builtin_invocation_id_id),
 					          "] = ", ib_var_ref, ";");
 					statement("threadgroup_barrier(mem_flags::mem_threadgroup);");
+					// UE Change Begin: Early return from tessellation-control shader will skip a threadgroup barrier.
+					#if 0
 					statement("if (", to_expression(builtin_invocation_id_id),
 					          " >= ", get_entry_point().output_vertices, ")");
 					statement("    return;");
+					#else
+					statement("if (", to_expression(builtin_invocation_id_id), " < ", get_entry_point().output_vertices,
+					          ")");
+					statement("{");
+					#endif
+					// UE Change End: Early return from tessellation-control shader will skip a threadgroup barrier.
 				}
 			});
 		}
@@ -8564,10 +8572,16 @@ void CompilerMSL::emit_barrier(uint32_t id_exe_scope, uint32_t id_mem_scope, uin
 	// Use the wider of the two scopes (smaller value)
 	exe_scope = min(exe_scope, mem_scope);
 
+	// UE Change Begin: Early return from tessellation-control shader will skip a threadgroup barrier.
+	if (get_execution_model() == ExecutionModelTessellationControl)
+	{
+		statement("} /* if (gl_InvocationID < vertices) */");
+	}
+	// UE Change End: Early return from tessellation-control shader will skip a threadgroup barrier.
+
 	if (msl_options.emulate_subgroups && exe_scope >= ScopeSubgroup && !id_mem_sem)
 		// In this case, we assume a "subgroup" size of 1. The barrier, then, is a noop.
 		return;
-
 	string bar_stmt;
 	if ((msl_options.is_ios() && msl_options.supports_msl_version(1, 2)) || msl_options.supports_msl_version(2))
 		bar_stmt = exe_scope < ScopeSubgroup ? "threadgroup_barrier" : "simdgroup_barrier";
