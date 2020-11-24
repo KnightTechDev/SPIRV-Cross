@@ -14234,8 +14234,10 @@ string CompilerMSL::builtin_to_glsl(BuiltIn builtin, StorageClass storage)
 		{
 			if (builtin_declaration)
 			{
-				if (needs_base_vertex_arg != TriState::No)
+				// UE Change Begin: Only change tri-states once to not break condition on recompilation.
+				if (needs_base_vertex_arg == TriState::Neutral)
 					needs_base_vertex_arg = TriState::Yes;
+				// UE Change End: Only change tri-states once to not break condition on recompilation.
 				return "gl_VertexID";
 			}
 			else
@@ -14255,8 +14257,10 @@ string CompilerMSL::builtin_to_glsl(BuiltIn builtin, StorageClass storage)
 		{
 			if (builtin_declaration)
 			{
-				if (needs_base_instance_arg != TriState::No)
+				// UE Change Begin: Only change tri-states once to not break condition on recompilation.
+				if (needs_base_instance_arg == TriState::Neutral)
 					needs_base_instance_arg = TriState::Yes;
+				// UE Change End: Only change tri-states once to not break condition on recompilation.
 				return "gl_InstanceID";
 			}
 			else
@@ -14276,8 +14280,10 @@ string CompilerMSL::builtin_to_glsl(BuiltIn builtin, StorageClass storage)
 		{
 			if (builtin_declaration)
 			{
-				if (needs_base_vertex_arg != TriState::No)
+				// UE Change Begin: Only change tri-states once to not break condition on recompilation.
+				if (needs_base_vertex_arg == TriState::Neutral)
 					needs_base_vertex_arg = TriState::Yes;
+				// UE Change End: Only change tri-states once to not break condition on recompilation.
 				return "gl_VertexIndex";
 			}
 			else
@@ -14297,8 +14303,10 @@ string CompilerMSL::builtin_to_glsl(BuiltIn builtin, StorageClass storage)
 		{
 			if (builtin_declaration)
 			{
-				if (needs_base_instance_arg != TriState::No)
+				// UE Change Begin: Only change tri-states once to not break condition on recompilation.
+				if (needs_base_instance_arg == TriState::Neutral)
 					needs_base_instance_arg = TriState::Yes;
+				// UE Change End: Only change tri-states once to not break condition on recompilation.
 				return "gl_InstanceIndex";
 			}
 			else
@@ -14315,7 +14323,10 @@ string CompilerMSL::builtin_to_glsl(BuiltIn builtin, StorageClass storage)
 		if (msl_options.supports_msl_version(1, 1) &&
 		    (msl_options.ios_support_base_vertex_instance || msl_options.is_macos()))
 		{
-			needs_base_vertex_arg = TriState::No;
+			// UE Change Begin: Only change tri-states once to not break condition on recompilation.
+			if (needs_base_vertex_arg == TriState::Neutral)
+				needs_base_vertex_arg = TriState::No;
+			// UE Change End: Only change tri-states once to not break condition on recompilation.
 			return "gl_BaseVertex";
 		}
 		else
@@ -14326,7 +14337,10 @@ string CompilerMSL::builtin_to_glsl(BuiltIn builtin, StorageClass storage)
 		if (msl_options.supports_msl_version(1, 1) &&
 		    (msl_options.ios_support_base_vertex_instance || msl_options.is_macos()))
 		{
-			needs_base_instance_arg = TriState::No;
+			// UE Change Begin: Only change tri-states once to not break condition on recompilation.
+			if (needs_base_instance_arg == TriState::Neutral)
+				needs_base_instance_arg = TriState::No;
+			// UE Change End: Only change tri-states once to not break condition on recompilation.
 			return "gl_BaseInstance";
 		}
 		else
