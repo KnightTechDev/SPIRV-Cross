@@ -8881,7 +8881,34 @@ void CompilerMSL::emit_atomic_func_op(uint32_t result_type, uint32_t result_id, 
 	exp += "*)";
 
 	exp += "&";
-	exp += to_enclosed_expression(obj);
+
+	// UE Change Begin: Metal doesn't allow vector subscripts for memory address.
+	string mem_addr = to_enclosed_expression(obj);
+	if (mem_addr.size() > 2 && mem_addr[mem_addr.size() - 2] == '.')
+	{
+		char vector_component = mem_addr[mem_addr.size() - 1];
+		switch (vector_component)
+		{
+		case 'x':
+		case 'r':
+			mem_addr = mem_addr.substr(0, mem_addr.size() - 2);
+			break;
+		case 'y':
+		case 'g':
+			mem_addr = join(mem_addr.substr(0, mem_addr.size() - 2), " + 1");
+			break;
+		case 'z':
+		case 'b':
+			mem_addr = join(mem_addr.substr(0, mem_addr.size() - 2), " + 2");
+			break;
+		case 'w':
+		case 'a':
+			mem_addr = join(mem_addr.substr(0, mem_addr.size() - 2), " + 3");
+			break;
+		}
+	}
+	exp += mem_addr;
+	// UE Change End: Metal doesn't allow vector subscripts for memory address.
 
 	bool is_atomic_compare_exchange_strong = op1_is_pointer && op1;
 
