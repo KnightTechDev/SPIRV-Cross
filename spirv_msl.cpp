@@ -4955,9 +4955,26 @@ void CompilerMSL::emit_custom_functions()
 				          ";");
 			}
 			statement("// Returns buffer coords corresponding to 2D texture coords for emulating 2D texture atomics");
-			statement("#define spvImage2DAtomicCoord(tc, tex) (((((tex).get_width() + ",
-			          " spvLinearTextureAlignment / 4 - 1) & ~(",
-			          " spvLinearTextureAlignment / 4 - 1)) * (tc).y) + (tc).x)");
+			// UE Change Begin: Add support for Image3D atomic emulation
+			statement("template<typename T>");
+			statement("inline uint spvImageAtomicCoord(texture2d<T> tex, uint2 tc)");
+			begin_scope();
+			statement("const uint aligned_width = ((tex.get_width() + spvLinearTextureAlignment / 4 - 1) & "
+			          "~(spvLinearTextureAlignment / 4 - 1));");
+			statement("return tc.y * aligned_width + tc.x;");
+			end_scope();
+			statement("");
+
+			statement("template <typename T>");
+			statement("inline uint spvImageAtomicCoord(texture3d<T> tex, uint3 tc)");
+			begin_scope();
+			statement("const uint aligned_width = ((tex.get_width() + spvLinearTextureAlignment / 4 - 1) & "
+			          "~(spvLinearTextureAlignment / 4 - 1));");
+			statement("const uint aligned_height = ((tex.get_height() + spvLinearTextureAlignment / 4 - 1) & "
+			          "~(spvLinearTextureAlignment / 4 - 1));");
+			statement("return (tc.z * aligned_height + tc.y) * aligned_width + tc.x;");
+			end_scope();
+			// UE Change End: Add support for Image3D atomic emulation
 			statement("");
 			break;
 		}
@@ -7931,10 +7948,12 @@ void CompilerMSL::emit_instruction(const Instruction &instruction)
 
 			std::string coord = to_expression(ops[3]);
 			auto &type = expression_type(ops[2]);
-			if (type.image.dim == Dim2D)
+			// UE Change Begin: Add support for Image3D atomic emulation
+			if (type.image.dim == Dim2D || type.image.dim == Dim3D)
 			{
-				coord = join("spvImage2DAtomicCoord(", coord, ", ", to_expression(ops[2]), ")");
+				coord = join("spvImageAtomicCoord(", to_expression(ops[2]), ", ", coord, ")");
 			}
+			// UE Change End: Add support for Image3D atomic emulation
 
 			// UE Change Begin: Clamp access to SSBOs to the size of the buffer
 			if (msl_options.enforce_storge_buffer_bounds)
@@ -15393,9 +15412,12 @@ CompilerMSL::SPVFuncImpl CompilerMSL::OpCodePreprocessor::get_spv_func_impl(Op o
 			}
 			// UE Change End: Clamp access to SSBOs to the size of the buffer
 
+			// UE Change Begin: Add support for Image3D atomic emulation
 			uint32_t tid = compiler.get<SPIRVariable>(it->second).basetype;
-			if (tid && compiler.get<SPIRType>(tid).image.dim == Dim2D)
+			Dim dim = compiler.get<SPIRType>(tid).image.dim;
+			if (tid && (dim == Dim2D || dim == Dim3D))
 				return SPVFuncImplImage2DAtomicCoords;
+			// UE Change End: Add support for Image3D atomic emulation
 
 			// UE Change Begin: Clamp access to SSBOs to the size of the buffer
 			return SPVFuncImplStorageBufferCoords;
