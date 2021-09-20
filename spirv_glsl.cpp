@@ -1214,8 +1214,10 @@ string CompilerGLSL::to_interpolation_qualifiers(const Bitset &flags)
 	//    res += "smooth ";
 	if (flags.get(DecorationFlat))
 		res += "flat ";
-	if (flags.get(DecorationNoPerspective))
+	// UE Change Begin: ESSL does not support noperspective.
+	if (flags.get(DecorationNoPerspective) && !options.es)
 		res += "noperspective ";
+	// UE Change End: ESSL does not support noperspective.
 	if (flags.get(DecorationCentroid))
 		res += "centroid ";
 	if (flags.get(DecorationPatch))
