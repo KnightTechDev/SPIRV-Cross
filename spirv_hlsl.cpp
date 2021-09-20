@@ -3243,6 +3243,11 @@ void CompilerHLSL::emit_texture_op(const Instruction &i, bool sparse)
 
 string CompilerHLSL::to_resource_binding(const SPIRVariable &var)
 {
+	// UE Change Begin: Allow disabling explicit resource binding.
+	if (hlsl_options.implicit_resource_binding)
+		return "";
+	// UE Change End: Allow disabling explicit resource binding.
+
 	const auto &type = get<SPIRType>(var.basetype);
 
 	// We can remap push constant blocks, even if they don't have any binding decoration.

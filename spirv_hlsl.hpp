@@ -145,6 +145,10 @@ public:
 		// UE Change Begin: Reconstruct original name of input/output semantics.
 		bool reconstruct_semantics = false;
 		// UE Change End: Reconstruct original name of input/output semantics.
+
+		// UE Change Begin: Allow disabling explicit resource binding.
+		bool implicit_resource_binding = false;
+		// UE Change End: Allow disabling explicit resource binding.
 	};
 
 	explicit CompilerHLSL(std::vector<uint32_t> spirv_)
