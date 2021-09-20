@@ -12031,6 +12031,10 @@ void CompilerMSL::entry_point_args_discrete_descriptors(string &ep_args)
 				{
 					new_type.vecsize = subpass_dim;
 
+					// UE Change Begin: Allow input attachments as float
+					type.vecsize = subpass_dim;
+					// UE Change End: Allow input attachments as float
+
 					// Ensure new type has a parent type if we generated a vector
 					if (subpass_type.vecsize == 1 && subpass_dim != 1)
 						new_type.parent_type = subpass_type.self;
