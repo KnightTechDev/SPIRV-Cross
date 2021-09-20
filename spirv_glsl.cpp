@@ -2027,10 +2027,12 @@ string CompilerGLSL::layout_for_variable(const SPIRVariable &var)
 		can_use_buffer_blocks = false;
 
 	bool can_use_binding;
+	// UE Change Begin: Bindings not fully supported on ES 3.1
 	if (options.es)
-		can_use_binding = options.version >= 310;
+		can_use_binding = options.version >= 320;
 	else
 		can_use_binding = options.enable_420pack_extension || (options.version >= 420);
+	// UE Change End: Bindings not fully supported on ES 3.1
 
 	// Make sure we don't emit binding layout for a classic uniform on GLSL 1.30.
 	if (!can_use_buffer_blocks && var.storage == StorageClassUniform)
