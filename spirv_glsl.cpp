@@ -13444,7 +13444,11 @@ string CompilerGLSL::image_type_glsl(const SPIRType &type, uint32_t id)
 
 	case DimBuffer:
 		if (options.es && options.version < 320)
-			require_extension_internal("GL_OES_texture_buffer");
+		{
+			// UE Change Begin: Incorrect extension for ESSL.
+			require_extension_internal("GL_EXT_texture_buffer");
+			// UE Change End: Incorrect extension for ESSL.
+		}
 		else if (!options.es && options.version < 300)
 			require_extension_internal("GL_EXT_texture_buffer_object");
 		res += "Buffer";
