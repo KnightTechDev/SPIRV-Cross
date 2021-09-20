@@ -1248,8 +1248,10 @@ string CompilerGLSL::to_interpolation_qualifiers(const Bitset &flags)
 
 string CompilerGLSL::layout_for_member(const SPIRType &type, uint32_t index)
 {
-	if (is_legacy())
+	// UE Change Begin: Member layouts not supported in ESSL.
+	if (is_legacy() || options.es)
 		return "";
+	// UE Change End: Member layouts not supported in ESSL.
 
 	bool is_block = has_decoration(type.self, DecorationBlock) || has_decoration(type.self, DecorationBufferBlock);
 	if (!is_block)
