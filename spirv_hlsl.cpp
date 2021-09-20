@@ -920,6 +920,16 @@ void CompilerHLSL::emit_interface_block_in_struct(const SPIRVariable &var, unord
 		// Allow semantic remap if specified.
 		auto semantic = to_semantic(location_number, execution.model, var.storage);
 
+		// UE Change Begin: Reconstruct original name of input/output semantics.
+		if (hlsl_options.reconstruct_semantics)
+		{
+			if (name.size() > 7 && name.compare(0, 7, "in_var_") == 0)
+				semantic = name.substr(7);
+			else if (name.size() > 8 && name.compare(0, 8, "out_var_") == 0)
+				semantic = name.substr(8);
+		}
+		// UE Change End: Reconstruct original name of input/output semantics.
+
 		if (need_matrix_unroll && type.columns > 1)
 		{
 			if (!type.array.empty())
