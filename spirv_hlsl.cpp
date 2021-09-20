@@ -2146,29 +2146,57 @@ void CompilerHLSL::emit_buffer_block(const SPIRVariable &var)
 			declared_block_names[var.self] = buffer_name;
 
 			type.member_name_cache.clear();
-			// var.self can be used as a backup name for the block name,
-			// so we need to make sure we don't disturb the name here on a recompile.
-			// It will need to be reset if we have to recompile.
-			preserve_alias_on_reset(var.self);
-			add_resource_name(var.self);
-			statement("cbuffer ", buffer_name, to_resource_binding(var));
-			begin_scope();
 
-			uint32_t i = 0;
-			for (auto &member : type.member_types)
+			// UE Change Begin: Reconstruct global uniforms from $Globals cbuffer
+			if (options.reconstruct_global_uniforms && buffer_name == "type_Globals")
 			{
-				add_member_name(type, i);
-				auto backup_name = get_member_name(type.self, i);
-				auto member_name = to_member_name(type, i);
-				member_name = join(to_name(var.self), "_", member_name);
-				ParsedIR::sanitize_underscores(member_name);
-				set_member_name(type.self, i, member_name);
-				emit_struct_member(type, member, i, "");
-				set_member_name(type.self, i, backup_name);
-				i++;
+				uint32_t i = 0;
+				for (auto &member : type.member_types)
+				{
+					add_member_name(type, i);
+					auto backup_offset = get_member_decoration(type.self, i, DecorationOffset);
+					unset_member_decoration(type.self, i, DecorationOffset);
+					emit_struct_member(type, member, i, "");
+					set_member_decoration(type.self, i, DecorationOffset, backup_offset);
+					i++;
+				}
 			}
+			else
+			{
+				// UE Change Begin: Reconstruct original name of global cbuffer declarations
+				if (hlsl_options.reconstruct_cbuffer_names && buffer_name.size() > 5 &&
+				    std::strncmp(buffer_name.c_str(), "type_", 5) == 0)
+				{
+					buffer_name = buffer_name.substr(5);
+				}
+				// UE Change End: Reconstruct original name of global cbuffer declarations
 
-			end_scope_decl();
+				// var.self can be used as a backup name for the block name,
+				// so we need to make sure we don't disturb the name here on a recompile.
+				// It will need to be reset if we have to recompile.
+				preserve_alias_on_reset(var.self);
+				add_resource_name(var.self);
+				statement("cbuffer ", buffer_name, to_resource_binding(var));
+				begin_scope();
+
+				uint32_t i = 0;
+				for (auto &member : type.member_types)
+				{
+					add_member_name(type, i);
+					auto backup_name = get_member_name(type.self, i);
+					auto member_name = to_member_name(type, i);
+					member_name = join(to_name(var.self), "_", member_name);
+					ParsedIR::sanitize_underscores(member_name);
+					set_member_name(type.self, i, member_name);
+					emit_struct_member(type, member, i, "");
+					set_member_name(type.self, i, backup_name);
+					i++;
+				}
+
+				end_scope_decl();
+			}
+			// UE Change End: Reconstruct global uniforms from $Globals cbuffer
+
 			statement("");
 		}
 		else

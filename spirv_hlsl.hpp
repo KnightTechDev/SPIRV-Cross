@@ -137,6 +137,10 @@ public:
 		// If add_vertex_attribute_remap is used and this feature is used,
 		// the semantic name will be queried once per active location.
 		bool flatten_matrix_vertex_input_semantics = false;
+
+		// UE Change Begin: Reconstruct original name of global cbuffer declarations
+		bool reconstruct_cbuffer_names = false;
+		// UE Change End: Reconstruct original name of global cbuffer declarations
 	};
 
 	explicit CompilerHLSL(std::vector<uint32_t> spirv_)
