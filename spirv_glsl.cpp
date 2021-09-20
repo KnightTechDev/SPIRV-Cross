@@ -2044,8 +2044,10 @@ string CompilerGLSL::layout_for_variable(const SPIRVariable &var)
 	if (can_use_binding && flags.get(DecorationBinding))
 		attr.push_back(join("binding = ", get_decoration(var.self, DecorationBinding)));
 
-	if (var.storage != StorageClassOutput && flags.get(DecorationOffset))
+	// UE Change Begin: Offsets not supported fully in ESSL.
+	if (var.storage != StorageClassOutput && flags.get(DecorationOffset) && !options.es)
 		attr.push_back(join("offset = ", get_decoration(var.self, DecorationOffset)));
+	// UE Change End: Offsets not supported fully in ESSL.
 
 	// Instead of adding explicit offsets for every element here, just assume we're using std140 or std430.
 	// If SPIR-V does not comply with either layout, we cannot really work around it.
