@@ -522,6 +522,11 @@ void CompilerGLSL::find_static_extensions()
 	if (options.separate_shader_objects && !options.es && options.version < 410)
 		require_extension_internal("GL_ARB_separate_shader_objects");
 
+	// UE Change Begin: Enable separate texture types via extensions.
+	if (options.separate_texture_types && !options.vulkan_semantics)
+		require_extension_internal("GL_NV_separate_texture_types");
+	// UE Change End: Enable separate texture types via extensions.
+
 	if (ir.addressing_model == AddressingModelPhysicalStorageBuffer64EXT)
 	{
 		if (!options.vulkan_semantics)
@@ -3579,7 +3584,10 @@ void CompilerGLSL::emit_resources()
 		}
 	});
 
-	bool skip_separate_image_sampler = !combined_image_samplers.empty() || !options.vulkan_semantics;
+	// UE Change Begin: Enable separate texture types via extensions.
+	bool skip_separate_image_sampler =
+	    !combined_image_samplers.empty() || !(options.vulkan_semantics || options.separate_texture_types);
+	// UE Change End: Enable separate texture types via extensions.
 
 	// Output Uniform Constants (values, samplers, images, etc).
 	ir.for_each_typed_id<SPIRVariable>([&](uint32_t, SPIRVariable &var) {
@@ -6584,7 +6592,9 @@ bool CompilerGLSL::is_supported_subgroup_op_in_opengl(spv::Op op)
 
 void CompilerGLSL::emit_sampled_image_op(uint32_t result_type, uint32_t result_id, uint32_t image_id, uint32_t samp_id)
 {
-	if (options.vulkan_semantics && combined_image_samplers.empty())
+	// UE Change Begin: Enable separate texture types via extensions.
+	if ((options.vulkan_semantics || options.separate_texture_types) && combined_image_samplers.empty())
+	// UE Change End: Enable separate texture types via extensions.
 	{
 		emit_binary_func_op(result_type, result_id, image_id, samp_id,
 		                    type_to_glsl(get<SPIRType>(result_type), result_id).c_str());
@@ -7058,7 +7068,9 @@ std::string CompilerGLSL::convert_separate_image_to_expression(uint32_t id)
 		    (type.image.dim != DimBuffer || options.enable_texture_buffer))
 		// UE Change End: Enable textureBuffer over samplerBuffer.
 		{
-			if (options.vulkan_semantics)
+			// UE Change Begin: Enable separate texture types via extensions.
+			if (options.vulkan_semantics || options.separate_texture_types)
+			// UE Change End: Enable separate texture types via extensions.
 			{
 				if (dummy_sampler_id)
 				{

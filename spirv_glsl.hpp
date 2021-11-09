@@ -144,6 +144,10 @@ public:
 		bool fixup_layout_locations = false;
 		// UE Change End: Fixup layout locations to include padding for arrays.
 
+		// UE Change Begin: Enable separate texture types via extensions.
+		bool separate_texture_types = false;
+		// UE Change End: Enable separate texture types via extensions.
+
 		// UE Change Begin: Allow disabling block layout for SSBOs and force UBO to std140.
 		bool disable_ssbo_block_layout = false;
 		bool force_ubo_std140_layout = false;
