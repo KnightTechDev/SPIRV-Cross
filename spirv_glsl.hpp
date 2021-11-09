@@ -144,6 +144,10 @@ public:
 		bool fixup_layout_locations = false;
 		// UE Change End: Fixup layout locations to include padding for arrays.
 
+		// UE Change Begin: Enable textureBuffer over samplerBuffer.
+		bool enable_texture_buffer = false;
+		// UE Change End: Enable textureBuffer over samplerBuffer.
+
 		enum Precision
 		{
 			DontCare,
