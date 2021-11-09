@@ -2041,6 +2041,11 @@ string CompilerGLSL::layout_for_variable(const SPIRVariable &var)
 	if (var.storage == StorageClassShaderRecordBufferKHR)
 		can_use_binding = false;
 
+	// UE Change Begin: Allow disabling explicit binding slots.
+	if (options.disable_explicit_binding)
+		can_use_binding = false;
+	// UE Change End: Allow disabling explicit binding slots.
+
 	if (can_use_binding && flags.get(DecorationBinding))
 		attr.push_back(join("binding = ", get_decoration(var.self, DecorationBinding)));
 
