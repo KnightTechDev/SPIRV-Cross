@@ -2054,16 +2054,24 @@ string CompilerGLSL::layout_for_variable(const SPIRVariable &var)
 		attr.push_back(join("offset = ", get_decoration(var.self, DecorationOffset)));
 	// UE Change End: Offsets not supported fully in ESSL.
 
+	// UE Change Begin: Allow disabling block layout for SSBOs and force UBO to std140.
 	// Instead of adding explicit offsets for every element here, just assume we're using std140 or std430.
 	// If SPIR-V does not comply with either layout, we cannot really work around it.
 	if (can_use_buffer_blocks && (ubo_block || emulated_ubo))
 	{
-		attr.push_back(buffer_to_packing_standard(type, false));
+		if (options.force_ubo_std140_layout)
+		{
+			set_extended_decoration(type.self, SPIRVCrossDecorationExplicitOffset);
+			attr.push_back("std140");
+		}
+		else
+			attr.push_back(buffer_to_packing_standard(type, false));
 	}
-	else if (can_use_buffer_blocks && (push_constant_block || ssbo_block))
+	else if (can_use_buffer_blocks && (push_constant_block || (ssbo_block && !options.disable_ssbo_block_layout)))
 	{
 		attr.push_back(buffer_to_packing_standard(type, true));
 	}
+	// UE Change End: Allow disabling block layout for SSBOs and force UBO to std140.
 
 	// For images, the type itself adds a layout qualifer.
 	// Only emit the format for storage images.

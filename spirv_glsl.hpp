@@ -144,6 +144,11 @@ public:
 		bool fixup_layout_locations = false;
 		// UE Change End: Fixup layout locations to include padding for arrays.
 
+		// UE Change Begin: Allow disabling block layout for SSBOs and force UBO to std140.
+		bool disable_ssbo_block_layout = false;
+		bool force_ubo_std140_layout = false;
+		// UE Change End: Allow disabling block layout for SSBOs and force UBO to std140.
+
 		// UE Change Begin: Allow disabling explicit binding slots.
 		bool disable_explicit_binding = false;
 		// UE Change End: Allow disabling explicit binding slots.
