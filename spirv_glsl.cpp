@@ -2360,7 +2360,13 @@ void CompilerGLSL::emit_buffer_block_native(const SPIRVariable &var)
 	bool is_coherent = ssbo && flags.get(DecorationCoherent);
 
 	// Block names should never alias, but from HLSL input they kind of can because block types are reused for UAVs ...
-	auto buffer_name = to_name(type.self, false);
+	// UE Change Begin: Enable buffer blocks to be named after block alias.
+	string buffer_name;
+	if (options.emit_ssbo_alias_type_name)
+		buffer_name = "type_" + to_name(var.self);
+	else
+		buffer_name = to_name(type.self, false);
+	// UE Change End: Enable buffer blocks to be named after block alias.
 
 	auto &block_namespace = ssbo ? block_ssbo_names : block_ubo_names;
 

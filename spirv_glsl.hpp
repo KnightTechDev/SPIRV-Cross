@@ -144,6 +144,11 @@ public:
 		bool fixup_layout_locations = false;
 		// UE Change End: Fixup layout locations to include padding for arrays.
 
+		// UE Change Begin: Enable buffer blocks to be named after block alias.
+		// Use "type_"+NAME for SSBO block names instead of their original type name.
+		bool emit_ssbo_alias_type_name = false;
+		// UE Change End: Enable buffer blocks to be named after block alias.
+
 		// UE Change Begin: Enable separate texture types via extensions.
 		bool separate_texture_types = false;
 		// UE Change End: Enable separate texture types via extensions.
